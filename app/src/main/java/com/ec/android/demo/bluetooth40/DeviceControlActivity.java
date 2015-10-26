@@ -13,7 +13,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.ec.android.module.bluetooth40.BluetoothLeService;
 import com.ec.android.module.bluetooth40.SampleGattAttributes;
 import com.ec.android.module.bluetooth40.base.BaseBluetoothControlActivity;
 
@@ -27,10 +26,6 @@ public class DeviceControlActivity extends BaseBluetoothControlActivity {
     private Toolbar mToolbar;
     //
     private Handler mHandler;
-    //通知
-    protected BluetoothGattCharacteristic mNotifyCharacteristic;
-    //写
-    protected BluetoothGattCharacteristic mWriteCharacteristic;
     //
     private static final int mAutoTime = 2500;
 
@@ -104,13 +99,19 @@ public class DeviceControlActivity extends BaseBluetoothControlActivity {
         send_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String ss = et1.getText().toString();
-                byte[] bytes = ss.getBytes();
+//                String ss = et1.getText().toString();
+//                String ss = "我只是想超过20个字节而已，应该超过了吧！";
+                String ss = "{\n" +
+                        "    \"people\":[\n" +
+                        "        {\"firstName\":\"Brett\",\"lastName\":\"McLaughlin\",\"email\":\"aaaa\"},\n" +
+                        "        {\"firstName\":\"Jason\",\"lastName\":\"Hunter\",\"email\":\"bbbb\"},\n" +
+                        "        {\"firstName\":\"Elliotte\",\"lastName\":\"Harold\",\"email\":\"cccc\"}\n" +
+                        "    ]\n" +
+                        "}";
                 //
-                if (mWriteCharacteristic != null) {
-                    mWriteCharacteristic.setValue(bytes);
-                    mBluetoothLeService.writeCharacteristic(mWriteCharacteristic);
-                }
+                String ss2 = "qwertyuiopasdfghjkl";
+                //
+                writeContent(ss2);
             }
         });
     }
@@ -120,6 +121,17 @@ public class DeviceControlActivity extends BaseBluetoothControlActivity {
     }
 
     private void initData() {
+//        PacketTools packetTools = new PacketTools();
+//        Packet.Builder builder = packetTools.newJustOnePacketBuilder();
+//
+//        //
+//        Short crc = ProtocolUtils.getCrc(builder);
+//
+//        Packet packet = builder.setCrc(crc).create();
+//
+//        int aa = 0;
+        //
+
 
     }
 
@@ -149,9 +161,7 @@ public class DeviceControlActivity extends BaseBluetoothControlActivity {
     }
 
     @Override
-    protected void onActionDataAvailable(Intent intent) {
-        byte[] data = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
-
+    protected void onActionDataAvailable(Byte[] data) {
         if (data != null && data.length > 0) {
             final StringBuilder stringBuilder = new StringBuilder(data.length);
             for (byte byteChar : data) {
@@ -194,12 +204,11 @@ public class DeviceControlActivity extends BaseBluetoothControlActivity {
                 String uuid = characteristic.getUuid().toString();
                 //通知
                 if (uuid.equals(SampleGattAttributes.NOTIFY_CHARACTERISTIC_CONFIG)) {
-                    mNotifyCharacteristic = characteristic;
-                    mBluetoothLeService.setCharacteristicNotification(mNotifyCharacteristic, true);
+                    initNotifyCharacteristic(characteristic);
                 }
                 //写
                 if (uuid.equals(SampleGattAttributes.WRITE_CHARACTERISTIC_CONFIG)) {
-                    mWriteCharacteristic = characteristic;
+                    initWriteCharacteristic(characteristic);
                 }
                 //
             }

@@ -16,6 +16,7 @@
 
 package com.ec.android.module.bluetooth40.base;
 
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -28,6 +29,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.ec.android.module.bluetooth40.BluetoothLeService;
+
+import org.apache.commons.lang.ArrayUtils;
 
 /**
  * For a given BLE device, this Activity provides the user interface to connect, display data,
@@ -53,6 +56,10 @@ public abstract class BaseBluetoothControlActivity extends BaseBluetoothIsOpenAc
     protected BluetoothLeService mBluetoothLeService;
 
     protected boolean mConnected = false;
+    //通知
+    protected BluetoothGattCharacteristic mNotifyCharacteristic;
+    //写
+    protected BluetoothGattCharacteristic mWriteCharacteristic;
     //
 //    protected BluetoothGattCharacteristic mNotifyCharacteristic;
 
@@ -108,7 +115,10 @@ public abstract class BaseBluetoothControlActivity extends BaseBluetoothIsOpenAc
 //                displayGattServices(mBluetoothLeService.getSupportedGattServices());
                 onActionGattServicesDiscovered(intent);
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-                onActionDataAvailable(intent);
+                byte[] data = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+                Byte[] bytes = ArrayUtils.toObject(data);
+                //FIXME
+                onActionDataAvailable(bytes);
             }
         }
     };
@@ -121,7 +131,7 @@ public abstract class BaseBluetoothControlActivity extends BaseBluetoothIsOpenAc
 
     protected abstract void onActionGattServicesDiscovered(Intent intent);
 
-    protected abstract void onActionDataAvailable(Intent intent);
+    protected abstract void onActionDataAvailable(Byte[] data);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -171,4 +181,42 @@ public abstract class BaseBluetoothControlActivity extends BaseBluetoothIsOpenAc
         intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
         return intentFilter;
     }
+
+    /**
+     * 写
+     * FIXME
+     *
+     * @param content
+     */
+    protected void writeContent(String content) {
+        writeContent(ArrayUtils.toObject(content.getBytes()));
+    }
+
+    protected void writeContent(Byte[] bytes) {
+
+        if (mWriteCharacteristic != null) {
+            mWriteCharacteristic.setValue(ArrayUtils.toPrimitive(bytes));
+            mBluetoothLeService.writeCharacteristic(mWriteCharacteristic);
+        }
+
+    }
+
+    /**
+     * 初始化 通知 的writeCharacteristic
+     */
+    protected void initNotifyCharacteristic(BluetoothGattCharacteristic characteristic) {
+        if (characteristic == null) {
+            return;
+        }
+        mNotifyCharacteristic = characteristic;
+        mBluetoothLeService.setCharacteristicNotification(mNotifyCharacteristic, true);
+    }
+
+    /**
+     * 初始化 写 的writeCharacteristic
+     */
+    protected void initWriteCharacteristic(BluetoothGattCharacteristic characteristic) {
+        mWriteCharacteristic = characteristic;
+    }
+
 }
